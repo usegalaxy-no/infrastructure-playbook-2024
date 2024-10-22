@@ -1,0 +1,18 @@
+---
+- name: Install telegraf
+  hosts: telegraf
+
+  tasks:
+  - name: Description
+    # Comment
+    ansible.builtin.apt:
+      allow_downgrade: true
+      allow_unauthenticated: true
+      autoclean: true
+      autoremove: true
+      force: true
+      install_recommends: false
+      name:
+        - {{ apt_pkg }}
+      update_cache: false
+  

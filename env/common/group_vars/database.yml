@@ -3,7 +3,7 @@ postgresql_data_directory: /database/postgres/
 # PostgreSQL
 postgresql_objects_users:
   - name: "{{galaxy_db_user}}"
-    password: "{{galaxy_db_passwd}}"
+    password: "{{vault_galaxy_db_passwd}}"
   - name: telegraf
     password: "{{ telegraf_database_password }}"
 #  - name: tiaas

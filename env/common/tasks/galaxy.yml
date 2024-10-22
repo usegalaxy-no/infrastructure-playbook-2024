@@ -141,7 +141,7 @@
   become_user: galaxy
   copy:
     content: |
-      {{ groups['database'][0] }}:5432:*:{{ galaxy_db_user }}:{{ galaxy_db_passwd }}
+      {{ groups['database'][0] }}:5432:*:{{ galaxy_db_user }}:{{ vault_galaxy_db_passwd }}
     dest: "~/.pgpass"
     mode: "0600"
 

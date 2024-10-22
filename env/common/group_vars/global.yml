@@ -87,7 +87,7 @@ smtp_host: "mail.usegalaxy.no"
 # variables generated based on the information above, should only need to edit in extreme cases
 
 # ---- The following variables were moved to group_vars/galaxy.yml. "galaxy_admin" was moved to the vault  
-# db_connection: "postgresql://{{galaxy_db_user}}:{{galaxy_db_passwd}}@{{db_host}}/{{galaxy_database}}"
+# db_connection: "postgresql://{{galaxy_db_user}}:{{vault_galaxy_db_passwd}}@{{db_host}}/{{galaxy_database}}"
 # db_host: "{{ groups['database'][0] }}"
 # db_ip: "{{ hostvars[db_host].ansible_host }}"
 # galaxy_db_user: "galaxy"

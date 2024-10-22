@@ -29,7 +29,7 @@ galaxy_config:
   galaxy:
     brand: "Norway"
     admin_users: "{{ galaxy_admin }}"
-    master_api: "{{ galaxy_master_api_key }}"
+    master_api: "{{ vault_galaxy_master_api_key }}"
     enable_beta_gdpr: true
     enable_quotas: true
     database_connection: "{{ db_connection }}"
@@ -73,7 +73,7 @@ galaxy_config:
     statsd_host: localhost
     statsd_influxdb: true
     statsd_prefix: "galaxy_page_timings"
-    id_secret: "{{galaxy_id_secret}}"
+    id_secret: "{{vault_galaxy_id_secret}}"
 
     message_box_visible: false
     message_box_class: warning
