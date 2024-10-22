@@ -1,0 +1,295 @@
+---
+- name: Add branding
+  tags: branding
+  copy:
+    src: templates/galaxy/static/
+    dest: "{{ galaxy_root }}/server/static/"
+    owner: root
+    group: root
+    mode: "0644"
+#    force: yes
+
+- name: Add welcome.html (a hack, as uses a template!)
+  tags: branding
+  template:
+    src: templates/galaxy/static/welcome.html.j2
+    dest: "{{ galaxy_root }}/server/static/welcome.html"
+    owner: root
+    group: root
+    mode: "0644"
+#    force: yes
+
+- name: add client scss
+  tags: branding
+  copy:
+    src: templates/galaxy/client/blue.scss
+    dest: "{{ galaxy_root }}/server/client/src/style/scss/theme/blue.scss"
+    owner: root
+    group: root
+    mode: "0644"
+  #    force: yes
+  register: scss_file
+
+- name: add client webhook patch file.
+  tags: webhooks
+  copy:
+    src: files/galaxy/client/options-menu.js
+    dest: "{{ galaxy_root }}/server/client/src/mvc/history/options-menu.js"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: directory creation for NeLS webhooks
+  tags: webhooks
+  file:
+    path: "{{ galaxy_root }}/server/config/plugins/webhooks/nels/"
+    owner: root
+    group: root
+    mode: "0755"
+    state: directory
+
+- name: Add webhooks
+  tags: webhooks
+  copy:
+    src: files/galaxy/webhooks/
+    dest: "{{ galaxy_root }}/server/config/plugins/webhooks/nels/"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Make sure compliance log exists
+  file:
+    path: "{{ galaxy_root }}/server/compliance.log"
+    state: touch
+    mode: "0600"
+    owner: "{{ galaxy_user.name }}"
+
+- name: Copy utility script to find container names
+  copy:
+    src: files/bin/find_container_id.py
+    dest: "/usr/local/bin/find_container_id.py"
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Copy compute backend monitoring script
+  copy:
+    src: files/bin/get_slurm_stats.py
+    dest: "/usr/local/bin/get_slurm_stats.py"
+    owner: root
+    group: root
+    mode: "0755"
+  tags:
+    - slurm_stats
+
+- name: Make sure output file for compute backend monitoring script has correct access rights
+  file:
+    path: "{{ galaxy_server_dir }}/static/slurm_stats.json"
+    state: touch
+    mode: "0755"
+  tags:
+    - slurm_stats
+
+- name: setup log dir for galaxy
+  file:
+    path: "{{ galaxy_log_dir }}"
+    state: directory
+    owner: "{{ galaxy_user.name }}"
+    group: "{{ galaxy_user.name }}"
+    mode: "0755"
+  when: no
+
+- name: Setup log-rotate
+  include_tasks: tasks/logrotate.yml
+
+# For gxadmin:
+- name: Add env vars in bashrc
+  become: true
+  become_user: galaxy
+  lineinfile:
+    path: "~/.bashrc"
+    regexp: "^export {{ item.var }}"
+    line: "export {{ item.var }}={{ item.val }}"
+  with_items:
+    - var: GDPR_MODE
+      val: "$(openssl rand -hex 24 2>/dev/null)"
+    - var: GALAXY_ROOT
+      val: "{{ galaxy_root }}"
+    - var: GALAXY_CONFIG_DIR
+      val: "{{ galaxy_root }}/config"
+    - var: GALAXY_CONFIG_FILE
+      val: "{{ galaxy_root }}/config/galaxy.yml"
+    - var: GALAXY_LOG_DIR
+      val: "{{ galaxy_log_dir }}"
+    - var: PGUSER
+      val: "{{ galaxy_db_user }}"
+    - var: PGHOST
+      val: '{{ groups["database"][0] }}'
+    - var: PGDATABASE
+      val: "{{ galaxy_database }}"
+    - var: INFLUX_URL
+      val: "{{ telegraf_urls }}"
+    - var: INFLUX_PASS
+      val: "{{ vault_telegraf_password }}"
+    - var: INFLUX_USER
+      val: "{{ telegraf_username }}"
+    - var: INFLUX_DB
+      val: "{{ telegraf_database }}"
+
+- name: Copy using the 'content' for inline data
+  become: true
+  become_user: galaxy
+  copy:
+    content: |
+      {{ groups['database'][0] }}:5432:*:{{ galaxy_db_user }}:{{ vault_galaxy_db_passwd }}
+    dest: "~/.pgpass"
+    mode: "0600"
+
+- name: Copy slurm telegraf plugin
+  copy:
+    src: files/telegraf/slurm.py
+    dest: "{{ custom_telegraf_slurm_collect_bin }}"
+    owner: root
+    group: root
+    mode: "0755"
+  tags:
+    - telegraf
+
+- name: Copy uwsgi telegraf plugin
+  copy:
+    src: files/telegraf/telegraf-uwsgi.sh
+    dest: "{{ custom_telegraf_uwsgi_bin }}"
+    owner: root
+    group: root
+    mode: "0755"
+  tags:
+    - telegraf
+
+- name: test to see if selinux is running
+  command: getenforce
+  register: sestatus
+  changed_when: false
+
+- name: Allow nginx httpd_sys_content_t to access the static files
+  sefcontext:
+    target: "{{ item }}(/.*)?"
+    setype: httpd_sys_content_t
+    state: present
+  register: update_fcontexts
+  with_items: "{{ galaxy_selinux_web_access_dirs }}"
+  when: '"Enabled" in sestatus.stdout'
+  tags:
+    - selinux
+
+- name: Apply new SELinux file context to filesystem
+  command: "restorecon -rv {{ item }}"
+  with_items: "{{ galaxy_selinux_web_access_dirs }}"
+  when: update_fcontexts.changed
+  tags:
+    - selinux
+
+- name: Create directory for gxadmin cleanup logs
+  file:
+    path: "/var/log/galaxy"
+    owner: "{{ galaxy_user.name }}"
+    group: "{{ galaxy_user.name }}"
+    mode: "0755"
+    state: directory
+
+
+- name: Cron job for cleaning Galaxy histories
+  cron:
+    name: "clean histories"
+    minute: "07"
+    hour: "5"
+    weekday: "6"
+    user: "{{ galaxy_user.name }}"
+    job: "{{ custom_telegraf_gxadmin_bin}} galaxy cleanup 30"
+
+- name: Add tmpwatch cron job
+  cron:
+    name: "Remove old Galaxy tmp files"
+    minute: "30"
+    hour: "5"
+    user: "{{ galaxy_user.name }}"
+    job: "tmpwatch -m 3d /srv/galaxy/var/tmp"
+
+- name: Cron job for compute backend monitoring script
+  cron:
+    name: "Schedule compute backend monitoring script"
+    minute: "*"
+    hour: "*"
+    job: "python3 /usr/local/bin/get_slurm_stats.py > {{ galaxy_server_dir }}/static/slurm_stats.json"
+  tags:
+    - slurm_stats
+
+
+# oidc specific tasks.
+
+- name: oidc config file
+  tags: auth
+  copy:
+    src: templates/galaxy/config/oidc_config.xml
+    dest: "{{ galaxy_config_dir }}/oidc_config.xml"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: oidc backends config file
+  tags: auth
+  template:
+    src: templates/galaxy/config/oidc_backends.xml.j2
+    dest: "{{ galaxy_config_dir }}/oidc_backends.xml"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: psa_authnz file
+  tags: auth
+  copy:
+    src: templates/galaxy/auth/psa_authnz.py
+    dest: "{{ galaxy_server_dir }}/lib/galaxy/authnz/psa_authnz.py"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: NeLS oidc file
+  tags: auth
+  template:
+    src: templates/galaxy/auth/nels.py.j2
+    dest: "{{ galaxy_venv_dir }}/lib/python{{galaxy_python_version}}/site-packages/social_core/backends/nels.py"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: oidc login page
+  tags: auth
+  copy:
+    src: templates/galaxy/auth/Login.vue
+    dest: "{{ galaxy_server_dir }}/client/src/components/login/"
+    owner: root
+    group: root
+    mode: "0644"
+
+# NeLS Storage plugin tasks
+
+- name: NeLS Storage remote file storage plugin
+  copy:
+    src: files/galaxy/nels_storage/nels.py
+    dest: "{{ galaxy_root }}/server/lib/galaxy/files/sources/nels.py"
+    owner: root
+    group: root
+    mode: "0644"
+
+
+- name: rebuild client
+  tags:
+    - auth
+    - branding
+  make:
+    chdir: "{{ galaxy_server_dir }}"
+    target: "{{ galaxy_client_make_target }}"
+  environment:
+    PATH: "{{ galaxy_venv_dir }}/bin:{{ ansible_env.PATH }}"
+    VIRTUAL_ENV: "{{ galaxy_venv_dir }}"
+  when: scss_file.changed

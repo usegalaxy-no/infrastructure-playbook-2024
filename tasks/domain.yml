@@ -1,0 +1,27 @@
+- name: add A records
+  cloudflare_dns:
+    zone:  "{{ domain }}"
+    record: "{{ item.host }}"
+    type: A
+    value: "{{ item.ip }}"
+    ttl: 1
+    account_email: "{{ vault_cloudflare_email }}"
+    account_api_token: "{{ vault_cloudflare_api_token }}"
+  with_items:
+    - { host: "{{ galaxy_host }}", ip: "{{ galaxy_ip }}" }
+    - { host: "*.interactivetoolentrypoint.interactivetool.{{ galaxy_host }}", ip: "{{ galaxy_ip }}" }
+    - { host: "{{ db_host }}", ip: "{{ db_ip }}" }
+    - { host: "{{ cvmfs0_host }}", ip: "{{ cvmfs0_ip }}"}
+    - { host: "data.{{ galaxy_host }}", ip: "{{ cvmfs0_ip }}"}
+
+#  - name: Remove records
+#    cloudflare_dns:
+#      zone: "{{ domain }}"
+#      record: "{{ item.host }}"
+#      type: A
+#      value: "{{ item.ip }}"
+#      state: absent
+#      account_email: "{{ vault_cloudflare_email }}"
+#      account_api_token: "{{ vault_cloudflare_api_token }}"
+#    with_items:
+#      - { host: 'test-slurm.usegalaxy.no', ip: '158.39.201.72' }

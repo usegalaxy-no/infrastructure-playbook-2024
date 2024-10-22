@@ -1,0 +1,42 @@
+- hosts: localhost
+  vars:
+    - test: yes
+  vars_files:
+    - secret_group_vars/global.vault
+    - group_vars/global.yml
+    - group_vars/env.yml
+  tasks:
+    - name: add generic A records
+      cloudflare_dns:
+        zone:  "{{ domain }}"
+        record: "{{ inventory_hostname }}"
+        type: A
+        value: "{{ ansible_host }}"
+        ttl: 1
+        account_email: "{{ vault_cloudflare_email }}"
+        account_api_token: "{{ vault_cloudflare_api_token }}"
+      with_items:
+        - "{{ groups['all'] | flatten(1)}}"
+
+    - name: add special A records
+      cloudflare_dns:
+        zone:  "{{ domain }}"
+        record: "{{ inventory_hostname }}"
+        type: A
+        value: "{{ ansible_host }}"
+        ttl: 1
+        account_email: "{{ vault_cloudflare_email }}"
+        account_api_token: "{{ vault_cloudflare_api_token }}"
+      with_items:
+        - { host: "*.interactivetoolentrypoint.interactivetool.{{ galaxy_host }}", ip: "{{ galaxy_ip }}" }
+        - { host: "www.{{galaxy_host}}", ip: "{{ galaxy_ip }}" }
+
+    - name: add MX record
+      cloudflare_dns:
+        zone:  "{{ domain }}"
+        record: "{{ domain }}"
+        type: MX
+        value: "{{ smtp_host }}"
+        ttl: 1
+        account_email: "{{ vault_cloudflare_email }}"
+        account_api_token: "{{ vault_cloudflare_api_token }}"
