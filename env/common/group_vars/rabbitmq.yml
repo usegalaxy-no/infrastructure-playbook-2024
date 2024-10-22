@@ -28,6 +28,3 @@ rabbitmq_users:
      passwd: '{{vault_rabbitmq_password_galaxy}}'}
   - {name: flower, vhost: 'galaxy_internal',
      passwd: '{{vault_rabbitmq_password_flower}}', tags: administrator}
-
-
-
