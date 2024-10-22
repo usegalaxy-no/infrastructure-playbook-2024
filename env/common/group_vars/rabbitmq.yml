@@ -1,8 +1,15 @@
+rabbitmq_version: "3.8.6"
+rabbitmq_rpm: "rabbitmq-server-{{ rabbitmq_version }}-1.el{{ ansible_distribution_major_version }}.noarch.rpm"
+rabbitmq_rpm_url: "https://packagecloud.io/rabbitmq/rabbitmq-server/packages/el/{{ ansible_distribution_major_version }}/{{ rabbitmq_rpm }}/download"
+
+rabbitmq_host: "{{ groups['rabbitmq'][0] }}"
+
 rabbitmq_vhosts:
   - pulsar_nrec
   - pulsar_nmbu_orion
   - test
-  - nvi_iridia
+  - nels_galaxy
+  - galaxy_internal
 
 rabbitmq_users:
   - {name: admin,  vhost: '/', 
@@ -13,8 +20,11 @@ rabbitmq_users:
      passwd: "{{rabbitmq_password_galaxy_nmbu}}" }
   - {name: test, vhost: test, 
      passwd: "{{rabbitmq_password_galaxy_test}}" }
-  - {name: telegraf, vhost: '/', 
+  - {name: telegraf, vhost: '/',
      passwd: "{{telegraf_rabbitmq_password}}", tags: monitoring }
-  - {name: nvi_iridia, vhost: 'nvi_iridia',
-     passwd: '{{rabbitmq_password_nvi_iridia}}'}
-
+  - {name: nels_galaxy, vhost: 'nels_galaxy',
+     passwd: '{{rabbitmq_password_nels_galaxy_api}}'}
+  - {name: galaxy, vhost: 'galaxy_internal',
+     passwd: '{{vault_rabbitmq_password_galaxy}}'}
+  - {name: flower, vhost: 'galaxy_internal',
+     passwd: '{{vault_rabbitmq_password_flower}}', tags: administrator}
