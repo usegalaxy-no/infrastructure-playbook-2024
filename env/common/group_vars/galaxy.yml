@@ -119,7 +119,6 @@ galaxy_systemd_zergling_env: "DRMAA_LIBRARY_PATH=/usr/lib64/libdrmaa.so.1 SINGUL
 
 galaxy_singularity_images_cvmfs_path: "/cvmfs/singularity.galaxyproject.org/all/"
 galaxy_handler_count: "{{ galaxy_systemd_handlers }}"
-pulsar_rabbitmq_proxy: "{{ groups['database'][0] }}"
 
 galaxy_config_files:
   - src: files/galaxy/config/job_metrics_conf.xml
@@ -149,8 +148,6 @@ galaxy_config_templates:
     dest: "{{ galaxy_config['galaxy']['job_config_file'] }}"
   - src: templates/galaxy/config/reports.yml
     dest: "{{ galaxy_config_dir }}/reports.yml"
-  - src: templates/galaxy/config/pulsar_app.yml.j2
-    dest: "{{ galaxy_config_dir }}/pulsar_app.yml"
   - src: templates/galaxy/config/container_resolvers_conf.xml.j2
     dest: "{{ galaxy_config_dir }}/container_resolvers_conf.xml"
   - src: templates/galaxy/config/container_resolvers_conf.xml.j2

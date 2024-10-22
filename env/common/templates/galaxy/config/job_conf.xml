@@ -2,48 +2,15 @@
     <plugins workers="4">
         <plugin id="local" type="runner" load="galaxy.jobs.runners.local:LocalJobRunner"/>
         <plugin id="slurm" type="runner" load="galaxy.jobs.runners.slurm:SlurmJobRunner"/>
-        <plugin id="pulsar_nmbu" type="runner" load="galaxy.jobs.runners.pulsar:PulsarMQJobRunner">
-            <param id="galaxy_url">https://{{ galaxy_host }}</param>
-            <param id="amqp_url">amqps://{{ pulsar_rabbitmq_username}}:{{ pulsar_rabbitmq_password}}@{{ pulsar_rabbitmq_proxy }}/%2F{{ pulsar_rabbitmq_vhost }}</param>
-        </plugin>
-        <plugin id="pulsar_nrec" type="runner" load="galaxy.jobs.runners.pulsar:PulsarMQJobRunner">
-            <param id="galaxy_url">https://test.usegalaxy.no</param>
-            <param id="amqp_url">amqps://test:wAQsJfQptm11p2TGWRDyc9aA3ormo2@test-db.usegalaxy.no/%2Ftest</param>
-        </plugin>
-        <plugin id="pulsar_embedded" type="runner" load="galaxy.jobs.runners.pulsar:PulsarEmbeddedJobRunner">
-            <param id="pulsar_config">{{  galaxy_config_dir }}/pulsar_app.yml</param>
-        </plugin>
     </plugins>
     <destinations default="slurm">
         <destination id="local" runner="local"/>
         <destination id="slurm" runner="slurm"/>
-        <destination id="pulsar_nmbu_orion_1c" runner="pulsar_nmbu">
-            <param id="jobs_directory">{{ pulsar_staging_dir }}</param>
-            <param id="submit_native_specification">-p hugemem,cigene,smallmem -n 1 -N 1</param>
-        </destination>
-        <destination id="pulsar_nrec" runner="pulsar_nrec">
-            <param id="jobs_directory">/srv/pulsar/staging/</param>
-            <!-- use a queue defined at the pulsar end -->
-            <!-- <param id="manager">8gb_mem</param> -->
-        </destination>
-        <destination id="interactive_local" runner="pulsar_embedded">
-            <param id="docker_enabled">true</param>
-            <param id="docker_volumes">$defaults</param>
-            <param id="docker_sudo">false</param>
-            <param id="docker_net">bridge</param>
-            <param id="docker_auto_rm">true</param>
-            <param id="docker_set_user"></param>
-            <param id="require_container">true</param>
-            <param id="container_monitor_result">callback</param>
-        </destination>
      </destinations>
     <tools>
         <tool id="upload1" destination="local" />
         <tool id="__IMPORT_HISTORY__" destination="local" />
         <tool id="__EXPORT_HISTORY__" destination="local" />
-        <tool id="cat1" destination="pulsar_nmbu_orion_1c" />
-        <!-- all fastqc jobs go to the nrec pulsar server -->
-        <tool id="toolshed.g2.bx.psu.edu/repos/devteam/fastqc/fastqc/0.72+galaxy1" destination="pulsar_nrec"/>
         <tool destination="interactive_local" id="interactive_tool_jupyter_notebook" />
         <tool destination="interactive_local" id="interactive_tool_rstudio" />
         <tool destination="interactive_local" id="interactive_tool_ethercalc" />

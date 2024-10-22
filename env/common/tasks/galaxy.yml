@@ -90,16 +90,6 @@
   tags:
     - slurm_stats
 
-- name: Make sure pulsar directories exists
-  file:
-    path: "{{ galaxy_root }}/server/database/{{ item }}"
-    state: directory
-    mode: "0700"
-    owner: "{{ galaxy_user.name }}"
-  with_items:
-    - pulsar_persisted_data
-    - pulsar_staging
-
 - name: setup log dir for galaxy
   file:
     path: "{{ galaxy_log_dir }}"

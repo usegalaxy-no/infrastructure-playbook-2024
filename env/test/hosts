@@ -19,9 +19,6 @@ ecc1.test.usegalaxy.no ansible_host=158.39.74.132 ansible_user=sysadmin trusted_
 #ecc2.test.usegalaxy.no ansible_host=158.39.77.63 ansible_user=sysadmin trusted_host=yes
 ecc3.test.usegalaxy.no ansible_host=158.37.65.240 ansible_user=sysadmin trusted_host=yes
 
-[pulsar_testusegalaxy_nvi]
-slurm.test.usegalaxy.no ansible_host=158.39.201.147 ansible_user=sysadmin
-
 [jenkins]
 db.test.usegalaxy.no ansible_host=158.39.201.110 ansible_user=sysadmin
 

@@ -5,8 +5,6 @@ rabbitmq_rpm_url: "https://packagecloud.io/rabbitmq/rabbitmq-server/packages/el/
 rabbitmq_host: "{{ groups['rabbitmq'][0] }}"
 
 rabbitmq_vhosts:
-  - pulsar_nrec
-  - pulsar_nmbu_orion
   - test
   - nels_galaxy
   - galaxy_internal
@@ -14,10 +12,6 @@ rabbitmq_vhosts:
 rabbitmq_users:
   - {name: admin,  vhost: '/', 
      passwd: "{{admin_rabbitmq_password}}", tags: administrator}
-  - {name: nrec_galaxy, vhost: pulsar_nrec,
-     passwd: "{{rabbitmq_password_galaxy_nrec}}"}
-  - {name: nmbu_galaxy, vhost: pulsar_nmbu_orion,
-     passwd: "{{rabbitmq_password_galaxy_nmbu}}" }
   - {name: test, vhost: test, 
      passwd: "{{rabbitmq_password_galaxy_test}}" }
   - {name: telegraf, vhost: '/',

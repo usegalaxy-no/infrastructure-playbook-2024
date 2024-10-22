@@ -68,7 +68,6 @@
   version: 0.7.1
 - src: usegalaxy_eu.certbot
   version: 0.1.11
-- src: galaxyproject.pulsar
 #- src: usegalaxy_eu.gxadmin
 #  version: 0.0.5
 - src: usegalaxy_eu.gie_proxy
